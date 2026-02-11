@@ -1,5 +1,4 @@
 services:
   qr-html:
     image: nginx:alpine
-    volumes:
-      - ./code:/usr/share/nginx/html
+    command: sh -c "echo '<h1>QR funcionando correctamente</h1>' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"
