@@ -1,5 +1,5 @@
 services:
   qr-html:
     image: nginx:alpine
-    ports:
-      - "80:80"
+    volumes:
+      - ./code:/usr/share/nginx/html
