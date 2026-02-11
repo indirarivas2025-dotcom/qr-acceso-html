@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Validando acceso</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body{
+      font-family: Arial, sans-serif;
+      text-align:center;
+      padding:40px 20px;
+      background:#f4f4f4;
+    }
+    h2{ font-size:26px; }
+    p{ font-size:18px; color:#555; }
+    .ok{ color:#2e7d32; }
+    .wait{ color:#f57c00; }
+    .bad{ color:#c62828; }
+  </style>
+</head>
+<body>
+
+<h2>⏳ Validando acceso…</h2>
+<p>Espere un momento</p>
+
+<script>
+(function(){
+
+  const params = new URLSearchParams(window.location.search);
+  const intento_id = params.get("intento_id");
+
+  if (!intento_id) {
+    document.body.innerHTML = `
+      <h2 class="bad">❌ QR inválido</h2>
+      <p>Falta información del acceso</p>
+    `;
+    return;
+  }
+
+  let interval;
+
+  function verificarEstado(){
+
+    fetch(`https://appn8n-n8n.03ryjo.easypanel.host/webhook/entrada-qr-validar?intento_id=${encodeURIComponent(intento_id)}`)
+      .then(res => res.json())
+      .then(data => {
+
+        if (data.estado === "ACTIVO") {
+
+          document.body.innerHTML = `
+            <h2 class="wait">⏳ Acceso en proceso</h2>
+            <p>Espere autorización del residente</p>
+          `;
+
+        }
+
+        else if (data.estado === "AUTORIZADO") {
+
+          clearInterval(interval);
+
+          document.body.innerHTML = `
+            <h2 class="ok">✅ Acceso autorizado</h2>
+            <p>Puede ingresar</p>
+          `;
+
+        }
+
+        else if (data.estado === "RECHAZADO") {
+
+          clearInterval(interval);
+
+          document.body.innerHTML = `
+            <h2 class="bad">⛔ Acceso denegado</h2>
+            <p>El residente no autorizó la entrada</p>
+          `;
+
+        }
+
+        else if (data.estado === "YA_FINALIZADO") {
+
+          clearInterval(interval);
+
+          document.body.innerHTML = `
+            <h2 class="bad">⛔ Este QR ya fue utilizado</h2>
+            <p>Debe solicitar un nuevo acceso</p>
+          `;
+
+        }
+
+        else if (data.estado === "QR_INVALIDO") {
+
+          clearInterval(interval);
+
+          document.body.innerHTML = `
+            <h2 class="bad">❌ QR inválido</h2>
+            <p>Este código no es válido</p>
+          `;
+        }
+
+        else {
+
+          clearInterval(interval);
+
+          document.body.innerHTML = `
+            <h2 class="bad">⚠️ Estado desconocido</h2>
+            <p>Intente nuevamente</p>
+          `;
+        }
+
+      })
+      .catch(() => {
+        clearInterval(interval);
+        document.body.innerHTML = `
+          <h2 class="bad">❌ Error de conexión</h2>
+          <p>No se pudo validar el acceso</p>
+        `;
+      });
+  }
+
+  verificarEstado();
+  interval = setInterval(verificarEstado, 3000);
+
+})();
+</script>
+
+</body>
+</html>
